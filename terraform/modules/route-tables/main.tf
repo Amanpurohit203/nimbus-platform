@@ -42,7 +42,7 @@ resource "aws_route_table" "private" {
   tags = merge(
     var.tags,
     {
-      Name = var.private_route_table_names[each.key]
+      Name = var.private_route_table_name[each.key]
     }
   )
 }

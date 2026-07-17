@@ -8,6 +8,8 @@ variable "name_prefix" {
   type        = string
 }
 
+
+
 variable "public_subnets" {
   description = "Public subnet configuration"
 
