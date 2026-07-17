@@ -84,3 +84,10 @@ variable "max_size" {
   description = "Maximum number of worker nodes"
   type        = number
 }
+
+variable "elastic_ips" {
+  description = "Elastic IP configuration"
+  type = map(object({
+    name = string
+  }))
+}

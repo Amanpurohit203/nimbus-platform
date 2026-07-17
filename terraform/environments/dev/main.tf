@@ -1,7 +1,7 @@
 module "vpc" {
   source = "../../modules/vpc"
 
-  vpc_name                 = var.project_name
+  vpc_name             = var.project_name
   vpc_cidr             = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -15,14 +15,23 @@ module "subnets" {
   vpc_id          = module.vpc.vpc_id
   public_subnets  = var.public_subnets
   private_subnets = var.private_subnets
-
-  tags = var.tags
+  cluster_name    = "${var.project_name}-${var.environment}-eks"
+  name_prefix     = "${var.project_name}-${var.environment}"
+  tags            = var.tags
 }
 
 module "internet_gateway" {
   source = "../../modules/internet-gateway"
 
-  vpc_id = module.vpc.vpc_id
+  vpc_id                = module.vpc.vpc_id
+  internet_gateway_name = "${var.project_name}-${var.environment}-igw"
+
+  tags = var.tags
+}
+
+module "elastic_ip" {
+  source      = "../../modules/elstic-ip"
+  elastic_ips = var.elastic_ips
 
   tags = var.tags
 }
@@ -30,12 +39,19 @@ module "internet_gateway" {
 module "nat_gateway" {
   source = "../../modules/nat-gateway"
 
+  project_name = var.project_name
+
   public_subnet_ids = module.subnets.public_subnet_ids
+
+  allocation_ids = module.elastic_ip.allocation_ids
+
+  environment = var.environment
 
   tags = merge(
   var.tags,
   {
-    Name = "${var.project_name}-${var.environment}-${each.key}"
+    Project = var.project_name
+    Environment = var.environment
   }
 )
 }
@@ -46,10 +62,18 @@ module "route_tables" {
 
   internet_gateway_id = module.internet_gateway.internet_gateway_id
 
-  nat_gateway_ids = module.nat_gateway.nat_gateway_ids
+  nat_gateway_ids = {
+  private-1 = module.nat_gateway.nat_gateway_ids["public-1"]
+  private-2 = module.nat_gateway.nat_gateway_ids["public-2"]
+}
 
-  public_subnet_ids  = module.subnets.public_subnet_ids
-  private_subnet_ids = module.subnets.private_subnet_ids
+  public_subnet_ids       = module.subnets.public_subnet_ids
+  private_subnet_ids      = module.subnets.private_subnet_ids
+  public_route_table_name = "${var.project_name}-${var.environment}-public-rt"
+   private_route_table_name = {
+    "private-1" = "${var.project_name}-${var.environment}-private-rt-1"
+    "private-2" = "${var.project_name}-${var.environment}-private-rt-2"
+  }
 
   tags = var.tags
 }
@@ -57,6 +81,16 @@ module "security_groups" {
   source = "../../modules/security-groups"
 
   vpc_id = module.vpc.vpc_id
+
+  eks_control_plane_security_group_name = "${var.project_name}-${var.environment}-eks-control-plane-sg"
+
+  eks_node_security_group_name = "${var.project_name}-${var.environment}-eks-node-sg"
+
+  alb_security_group_name = "${var.project_name}-${var.environment}-alb-sg"
+
+  efs_security_group_name = "${var.project_name}-${var.environment}-efs-sg"
+
+  rds_security_group_name = "${var.project_name}-${var.environment}-rds-sg"
 
   tags = var.tags
 }
@@ -78,10 +112,13 @@ module "eks" {
   cluster_role_arn = module.iam.eks_cluster_role_arn
   node_role_arn    = module.iam.eks_node_role_arn
 
-  subnet_ids         = concat(module.subnets.public_subnet_ids, module.subnets.private_subnet_ids)
-  private_subnet_ids = module.subnets.private_subnet_ids
+  subnet_ids = concat(
+  values(module.subnets.public_subnet_ids),
+  values(module.subnets.private_subnet_ids)
+)
+    private_subnet_ids = values(module.subnets.private_subnet_ids)
 
-  eks_control_plane_security_group_id = module.security_groups.eks_control_plane_sg_id
+  eks_control_plane_security_group_id = module.security_groups.eks_control_plane_security_group_id
 
   node_group_name     = var.node_group_name
   node_instance_types = var.node_instance_types
