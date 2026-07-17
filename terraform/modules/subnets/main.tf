@@ -28,6 +28,7 @@ resource "aws_subnet" "private" {
     cidr_block = each.value.cidr
     availability_zone = each.value.az
 
+
     map_public_ip_on_launch = false
 
     tags= merge(
