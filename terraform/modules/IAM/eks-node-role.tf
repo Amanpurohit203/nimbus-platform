@@ -30,7 +30,7 @@ resource "aws_iam_role" "eks_node" {
 
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
 
-  role       = aws_iam_role.eks_node.name
+  role = aws_iam_role.eks_node.name
 
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
 }
@@ -38,7 +38,7 @@ resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
 
 resource "aws_iam_role_policy_attachment" "eks_ecr_pull_policy" {
 
-  role       = aws_iam_role.eks_node.name
+  role = aws_iam_role.eks_node.name
 
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPullOnly"
 }
@@ -46,7 +46,7 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_pull_policy" {
 
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
 
-  role       = aws_iam_role.eks_node.name
+  role = aws_iam_role.eks_node.name
 
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
