@@ -91,3 +91,43 @@ variable "elastic_ips" {
     name = string
   }))
 }
+
+variable "encrypted" {
+  description = "Enable EFS encryption"
+  type        = bool
+}
+
+variable "performance_mode" {
+  description = "EFS performance mode"
+  type        = string
+}
+
+variable "throughput_mode" {
+  description = "EFS throughput mode"
+  type        = string
+}
+
+variable "backup_enabled" {
+  description = "Enable EFS automatic backups"
+  type        = bool
+}
+
+
+variable "irsa_roles" {
+
+  description = "IRSA roles"
+
+  type = map(object({
+
+    role_name = string
+
+    namespace = string
+
+    service_account = string
+
+    managed_policy_arns = list(string)
+
+    tags = optional(map(string), {})
+
+  }))
+}
