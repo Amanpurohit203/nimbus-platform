@@ -48,12 +48,12 @@ module "nat_gateway" {
   environment = var.environment
 
   tags = merge(
-  var.tags,
-  {
-    Project = var.project_name
-    Environment = var.environment
-  }
-)
+    var.tags,
+    {
+      Project     = var.project_name
+      Environment = var.environment
+    }
+  )
 }
 module "route_tables" {
   source = "../../modules/route-tables"
@@ -63,14 +63,14 @@ module "route_tables" {
   internet_gateway_id = module.internet_gateway.internet_gateway_id
 
   nat_gateway_ids = {
-  private-1 = module.nat_gateway.nat_gateway_ids["public-1"]
-  private-2 = module.nat_gateway.nat_gateway_ids["public-2"]
-}
+    private-1 = module.nat_gateway.nat_gateway_ids["public-1"]
+    private-2 = module.nat_gateway.nat_gateway_ids["public-2"]
+  }
 
   public_subnet_ids       = module.subnets.public_subnet_ids
   private_subnet_ids      = module.subnets.private_subnet_ids
   public_route_table_name = "${var.project_name}-${var.environment}-public-rt"
-   private_route_table_name = {
+  private_route_table_name = {
     "private-1" = "${var.project_name}-${var.environment}-private-rt-1"
     "private-2" = "${var.project_name}-${var.environment}-private-rt-2"
   }
@@ -113,10 +113,10 @@ module "eks" {
   node_role_arn    = module.iam.eks_node_role_arn
 
   subnet_ids = concat(
-  values(module.subnets.public_subnet_ids),
-  values(module.subnets.private_subnet_ids)
-)
-    private_subnet_ids = values(module.subnets.private_subnet_ids)
+    values(module.subnets.public_subnet_ids),
+    values(module.subnets.private_subnet_ids)
+  )
+  private_subnet_ids = values(module.subnets.private_subnet_ids)
 
   eks_control_plane_security_group_id = module.security_groups.eks_control_plane_security_group_id
 
@@ -126,6 +126,33 @@ module "eks" {
   desired_size = var.desired_size
   min_size     = var.min_size
   max_size     = var.max_size
+
+  tags = var.tags
+}
+
+module "efs" {
+  source = "../../modules/efs"
+
+  creation_token = "${var.project_name}-${var.environment}-efs"
+
+  encrypted        = var.encrypted
+  performance_mode = var.performance_mode
+  throughput_mode  = var.throughput_mode
+  backup_enabled   = var.backup_enabled
+
+  vpc_id = module.vpc.vpc_id
+
+  private_subnet_ids = module.subnets.private_subnet_ids
+
+  efs_security_group_id = module.security_groups.efs_security_group_id
+
+  tags = var.tags
+}
+
+module "oidc_provider" {
+  source = "../../modules/oidc-provider"
+
+  cluster_name = var.cluster_name
 
   tags = var.tags
 }
