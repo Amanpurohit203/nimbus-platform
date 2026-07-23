@@ -60,3 +60,18 @@ resource "aws_iam_role" "irsa" {
     }
   )
 }
+
+resource "aws_iam_role_policy_attachment" "irsa" {
+
+  for_each = {
+
+    for attachment in local.irsa_policy_attachments :
+
+    "${attachment.role_key}-${replace(basename(attachment.policy_arn), ":", "-")}" => attachment
+
+  }
+
+  role = aws_iam_role.irsa[each.value.role_key].name
+
+  policy_arn = each.value.policy_arn
+}

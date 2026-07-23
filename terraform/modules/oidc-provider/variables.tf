@@ -1,9 +1,7 @@
-variable "cluster_name" {
-  description = "EKS Cluster Name"
-  type        = string
+variable "oidc_issuer_url" {
+  type = string
 }
 
 variable "tags" {
-  description = "Common tags"
-  type        = map(string)
+  type = map(string)
 }

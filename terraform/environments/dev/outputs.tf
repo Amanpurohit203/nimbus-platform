@@ -23,9 +23,12 @@ output "cluster_endpoint" {
   value       = module.eks.cluster_endpoint
 }
 
-output "cluster_oidc_issuer_url" {
-  description = "OIDC Issuer URL"
-  value       = module.eks.cluster_oidc_issuer_url
+output "oidc_provider_arn" {
+  value = module.oidc_provider.oidc_provider_arn
+}
+
+output "oidc_provider_url" {
+  value = module.oidc_provider.oidc_provider_url
 }
 
 output "node_group_name" {
@@ -40,3 +43,4 @@ output "efs_id" {
 output "efs_dns_name" {
   value = module.efs.efs_dns_name
 }
+
