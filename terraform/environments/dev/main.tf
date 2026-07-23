@@ -99,6 +99,13 @@ module "iam" {
 
   cluster_role_name = var.cluster_role_name
   node_role_name    = var.node_role_name
+  oidc_provider_arn = module.oidc_provider.oidc_provider_arn
+
+  oidc_provider_url = module.oidc_provider.oidc_provider_url
+
+  irsa_roles = var.irsa_roles
+
+
 
   tags = var.tags
 }
@@ -150,9 +157,39 @@ module "efs" {
 }
 
 module "oidc_provider" {
+
   source = "../../modules/oidc-provider"
 
-  cluster_name = var.cluster_name
+  oidc_issuer_url = module.eks.cluster_oidc_issuer_url
 
   tags = var.tags
+}
+
+
+module "helm_efs_csi" {
+
+  source = "../../modules/helm"
+
+  release_name     = var.helm_release_name
+  repository       = var.helm_repository
+  chart            = var.helm_chart
+  chart_version    = var.helm_chart_version
+  namespace        = var.helm_namespace
+  create_namespace = var.helm_create_namespace
+
+  set_values = concat(
+
+    var.helm_set_values,
+
+    [
+
+      {
+        name  = "controller.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+        value = module.iam.role_arns["efs-csi"]
+      }
+
+    ]
+
+  )
+
 }

@@ -131,3 +131,40 @@ variable "irsa_roles" {
 
   }))
 }
+
+variable "helm_release_name" {
+  type = string
+}
+
+variable "helm_repository" {
+  type = string
+}
+
+variable "helm_chart" {
+  type = string
+}
+
+variable "helm_chart_version" {
+  type = string
+}
+
+variable "helm_namespace" {
+  type = string
+}
+
+variable "helm_create_namespace" {
+  type = bool
+}
+
+variable "helm_set_values" {
+
+  type = list(object({
+
+    name  = string
+    value = string
+
+  }))
+
+  default = []
+
+}

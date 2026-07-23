@@ -6,6 +6,7 @@ variable "elastic_ips" {
   }))
 }
 
+
 variable "tags" {
   description = "Common tags"
   type        = map(string)
