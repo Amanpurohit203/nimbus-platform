@@ -1,14 +1,10 @@
-data "aws_eks_cluster" "this" {
-  name = var.cluster_name
-}
-
 data "tls_certificate" "this" {
-  url = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
+  url = var.oidc_issuer_url
 }
 
 resource "aws_iam_openid_connect_provider" "this" {
 
-  url = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
+  url = var.oidc_issuer_url
 
   client_id_list = [
     "sts.amazonaws.com"
@@ -21,7 +17,7 @@ resource "aws_iam_openid_connect_provider" "this" {
   tags = merge(
     var.tags,
     {
-      Name = "${var.cluster_name}-oidc-provider"
+      Name = "oidc-provider"
     }
   )
 }

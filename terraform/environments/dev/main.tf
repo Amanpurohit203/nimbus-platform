@@ -99,6 +99,13 @@ module "iam" {
 
   cluster_role_name = var.cluster_role_name
   node_role_name    = var.node_role_name
+  oidc_provider_arn = module.oidc_provider.oidc_provider_arn
+
+  oidc_provider_url = module.oidc_provider.oidc_provider_url
+
+  irsa_roles = var.irsa_roles
+
+
 
   tags = var.tags
 }
@@ -150,9 +157,84 @@ module "efs" {
 }
 
 module "oidc_provider" {
+
   source = "../../modules/oidc-provider"
 
-  cluster_name = var.cluster_name
+  oidc_issuer_url = module.eks.cluster_oidc_issuer_url
 
   tags = var.tags
+}
+
+
+module "helm_efs_csi" {
+
+  source = "../../modules/helm"
+
+  release_name     = var.helm_release_name
+  repository       = var.helm_repository
+  chart            = var.helm_chart
+  chart_version    = var.helm_chart_version
+  namespace        = var.helm_namespace
+  create_namespace = var.helm_create_namespace
+
+  set_values = concat(
+
+    var.helm_set_values,
+
+    [
+
+      {
+        name  = "controller.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+        value = module.iam.role_arns["efs-csi"]
+      }
+
+    ]
+
+  )
+
+}
+module "db_password" {
+
+  source = "../../modules/random-password"
+
+}
+
+module "rds" {
+
+  source = "../../modules/rds"
+
+  identifier        = var.rds.identifier
+  engine_version    = var.rds.engine_version
+  instance_class    = var.rds.instance_class
+  allocated_storage = var.rds.allocated_storage
+
+  db_name  = var.rds.database_name
+  username = var.rds.username
+
+  password = module.db_password.password
+
+  subnet_ids = values(module.subnets.private_subnet_ids)
+
+  security_group_ids = [
+    module.security_groups.rds_security_group_id
+  ]
+
+}
+
+module "database_secret" {
+
+  source = "../../modules/secrets-manager"
+
+  secret_name = "nimbus/document-service"
+
+  username = var.rds.username
+
+  password = module.db_password.password
+
+  database_name = var.rds.database_name
+
+  host = module.rds.address
+
+  port = module.rds.port
+
 }
