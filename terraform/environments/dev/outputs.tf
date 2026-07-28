@@ -44,3 +44,23 @@ output "efs_dns_name" {
   value = module.efs.efs_dns_name
 }
 
+output "rds_endpoint" {
+  value = module.rds.endpoint
+}
+
+output "rds_address" {
+  value = module.rds.address
+}
+
+output "generated_db_password" {
+  value     = module.db_password.password
+  sensitive = true
+}
+
+output "database_secret_name" {
+  value = module.database_secret.secret_name
+}
+
+output "database_secret_arn" {
+  value = module.database_secret.secret_arn
+}

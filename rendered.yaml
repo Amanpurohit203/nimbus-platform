@@ -1,0 +1,183 @@
+---
+# Source: nimbus-document-service/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nimbus
+---
+# Source: nimbus-document-service/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nimbus
+  namespace: nimbus
+---
+# Source: nimbus-document-service/templates/service.yaml
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: nimbus
+  namespace: nimbus
+  labels:
+    app.kubernetes.io/name: nimbus-document-service
+    app.kubernetes.io/instance: nimbus
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: nimbus-document-service
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+---
+# Source: nimbus-document-service/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: nimbus
+  namespace: nimbus
+  labels:
+    app.kubernetes.io/name: nimbus-document-service
+    app.kubernetes.io/instance: nimbus
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: nimbus-document-service
+
+  template:
+    metadata:
+      labels:
+        app: nimbus-document-service
+
+    spec:
+
+      serviceAccountName: nimbus
+
+      containers:
+        - name: nimbus-document-service
+
+          image: "697015998406.dkr.ecr.ap-south-1.amazonaws.com/nimbus-document-service:1.0.0"
+
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8000
+
+          envFrom:
+            - secretRef:
+                name: nimbus-document-secret
+
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+# Source: nimbus-document-service/templates/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+
+metadata:
+  name: nimbus
+  namespace: nimbus
+
+spec:
+
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nimbus
+
+  minReplicas: 2
+  maxReplicas: 5
+
+  metrics:
+    - type: Resource
+
+      resource:
+        name: cpu
+
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+# Source: nimbus-document-service/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: nimbus
+  namespace: nimbus
+
+  annotations:
+    kubernetes.io/ingress.class: alb
+
+spec:
+  ingressClassName: alb
+
+  rules:
+    - host: api.nimbus.local
+
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+
+            backend:
+              service:
+                name: nimbus
+
+                port:
+                  number: 80
+---
+# Source: nimbus-document-service/templates/externalsecret.yaml
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+
+metadata:
+  name: nimbus-document-secret
+  namespace: nimbus
+
+spec:
+
+  refreshInterval: 1h
+
+  secretStoreRef:
+    name: aws-secretsmanager
+    kind: ClusterSecretStore
+
+  target:
+    name: nimbus-document-secret
+
+  data:
+    - secretKey: DATABASE_URL
+
+      remoteRef:
+        key: nimbus/document-service
+        property: DATABASE_URL
