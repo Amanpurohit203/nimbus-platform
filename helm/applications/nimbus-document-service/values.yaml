@@ -1,0 +1,61 @@
+namespace: nimbus
+
+replicaCount: 2
+
+image:
+  repository: 697015998406.dkr.ecr.ap-south-1.amazonaws.com/nimbus-document-service
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: true
+  className: alb
+  annotations: {}
+  host: api.nimbus.local
+  path: /
+  pathType: Prefix
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+persistence:
+  enabled: true
+  storageClass: gp3
+  accessMode: ReadWriteOnce
+  size: 5Gi
+
+externalSecret:
+  secretName: nimbus-document-secret
+  awsSecretName: nimbus/document-service
+
+podAnnotations: {}
+
+podLabels: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

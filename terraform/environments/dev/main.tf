@@ -193,3 +193,48 @@ module "helm_efs_csi" {
   )
 
 }
+module "db_password" {
+
+  source = "../../modules/random-password"
+
+}
+
+module "rds" {
+
+  source = "../../modules/rds"
+
+  identifier        = var.rds.identifier
+  engine_version    = var.rds.engine_version
+  instance_class    = var.rds.instance_class
+  allocated_storage = var.rds.allocated_storage
+
+  db_name  = var.rds.database_name
+  username = var.rds.username
+
+  password = module.db_password.password
+
+  subnet_ids = values(module.subnets.private_subnet_ids)
+
+  security_group_ids = [
+    module.security_groups.rds_security_group_id
+  ]
+
+}
+
+module "database_secret" {
+
+  source = "../../modules/secrets-manager"
+
+  secret_name = "nimbus/document-service"
+
+  username = var.rds.username
+
+  password = module.db_password.password
+
+  database_name = var.rds.database_name
+
+  host = module.rds.address
+
+  port = module.rds.port
+
+}

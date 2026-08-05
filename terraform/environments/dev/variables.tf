@@ -168,3 +168,14 @@ variable "helm_set_values" {
   default = []
 
 }
+
+variable "rds" {
+  type = object({
+    identifier        = string
+    engine_version    = string
+    instance_class    = string
+    allocated_storage = number
+    database_name     = string
+    username          = string
+  })
+}
